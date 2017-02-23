@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import socket
-from MessageReceiver import MessageReceiver
-from MessageParser import MessageParser
+from message_receiver import MessageReceiver
+from message_parser import MessageParser
 
 class Client:
     """
