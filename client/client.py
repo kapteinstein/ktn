@@ -2,6 +2,7 @@
 import socket
 from message_receiver import MessageReceiver
 from message_parser import MessageParser
+import json
 
 class Client:
     """
@@ -15,13 +16,32 @@ class Client:
 
         # Set up the socket connection to the server
         self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.host = host
+        self.server_port = server_port
+        self.parser = MessageParser()
+
 
         # TODO: Finish init process with necessary code
         self.run()
 
     def run(self):
-        # Initiate the connection to the server
+        # Initiate the connection to the server and receiver
         self.connection.connect((self.host, self.server_port))
+        MessageReceiver(self, self.connection)
+        d = {}  # new dictonary
+
+        while True:
+            # get message from user
+            message = input().split(' ', 1)
+            d['request'] = message[0]
+            try:
+                d['content'] = message[1]
+            except:
+                # empty content
+                d['content'] = ''
+
+            payload = json.dumps(d)     # convert to json
+            self.send_payload(payload)  # send payload
 
     def disconnect(self):
         # TODO: Handle disconnection
@@ -29,11 +49,11 @@ class Client:
 
     def receive_message(self, message):
         # TODO: Handle incoming message
-        pass
+        self.parser.parse(message)
 
     def send_payload(self, data):
-        # TODO: Handle sending of a payload
-        pass
+        # Handle sending of a payload
+        self.connection.send(data.encode())
 
     # More methods may be needed!
 

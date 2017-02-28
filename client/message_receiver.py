@@ -12,12 +12,22 @@ class MessageReceiver(Thread):
         """
         This method is executed when creating a new MessageReceiver object
         """
+        # run __init__ because of Python3
+        super(MessageReceiver, self).__init__()
 
         # Flag to run thread as a deamon
         self.daemon = True
+        self.client = client
+        self.connection = connection
 
         # TODO: Finish initialization of MessageReceiver
+        # start thread
+        self.start()
 
     def run(self):
         # TODO: Make MessageReceiver receive and handle payloads
-        pass
+        while True:
+            # recv payload and decode the binary file
+            payload = self.connection.recv(4096).decode()
+            # send message over to client
+            self.client.receive_message(payload)

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import socketserver
+import json
+import time
 
 """
 Variables and functions that must be used by all the ClientHandler objects
@@ -24,8 +26,19 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         # Loop that listens for messages from the client
         while True:
-            received_string = self.connection.recv(4096)
+            received_string = self.connection.recv(4096).decode()
+            print(json.loads(received_string))
 
+            # generate temporarly dummy response
+            d = {}
+            d['timestamp'] = time.time()
+            d['sender'] = ''
+            d['response'] = 'success'
+            d['content'] = ''
+
+            #convert to json and send
+            payload = json.dumps(d)
+            self.connection.send(payload.encode())
             # TODO: Add handling of received payload from client
 
 
