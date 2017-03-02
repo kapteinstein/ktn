@@ -20,8 +20,6 @@ class Client:
         self.server_port = server_port
         self.parser = MessageParser()
 
-
-        # TODO: Finish init process with necessary code
         self.run()
 
     def run(self):
@@ -43,19 +41,22 @@ class Client:
             payload = json.dumps(d)     # convert to json
             self.send_payload(payload)  # send payload
 
+            if d['request'] == 'logout':
+                return self.disconnect()
+
     def disconnect(self):
-        # TODO: Handle disconnection
-        pass
+        # Handle disconnect
+        self.connection.close()
+        print("Disconnected")
+        return 0
 
     def receive_message(self, message):
-        # TODO: Handle incoming message
+        # Handle incoming message
         self.parser.parse(message)
 
     def send_payload(self, data):
         # Handle sending of a payload
         self.connection.send(data.encode())
-
-    # More methods may be needed!
 
 
 if __name__ == '__main__':
