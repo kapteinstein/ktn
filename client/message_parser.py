@@ -44,4 +44,4 @@ class MessageParser():
             msg = json.loads(message)
             time = datetime.datetime.fromtimestamp(msg['timestamp'])
             print("{}".format(time.strftime('%H:%M:%S')), end='')
-            parse_message(msg)
+            self.parse_message(msg)

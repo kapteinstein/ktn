@@ -16,7 +16,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
     only connected clients, and not the server itself. If you want to write
     logic for the server, you must write it outside this class
     """
-               
+
     def handle(self):
         """
         This method handles the connection between a client and the server.
@@ -37,7 +37,6 @@ class ClientHandler(socketserver.BaseRequestHandler):
         # Loop that listens for messages from the client
         while True:
             received_string = self.connection.recv(4096).decode()
-            print(json.loads(received_string))
             received = json.loads(received_string)
             self.d = {}
             received['request'] = received['request'].lower()
@@ -83,7 +82,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         self.d['sender'] = 'server'
         self.d['response'] = 'info'
         self.d['content'] = 'logout successful'
-        self.d.pop(u[self.connection], None)
+        u.pop(self.connection, None)
         self.connection.close()
         
         
@@ -94,6 +93,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         self.d['sender'] = u[self.connection]
         self.d['response'] = 'message'
         self.d['content'] = data['content']
+        self.d['timestamp'] = time.time()
         log.append(json.dumps(self.d))
         self.send()
     
