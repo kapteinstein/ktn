@@ -67,7 +67,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         if(data['content'] in u.values()):
             return self.response_error("Username taken")
             
-        if(data['content'] == "" or not(re.match('[a-zA-Z]*$',data['content']))):
+        if(data['content'] == "" or not(re.match('[a-zA-Z0-9]*$',data['content']))):
             return self.response_error("Username invalid")
         u[self.connection] = data['content']
         self.d['sender'] = 'server'
@@ -100,7 +100,11 @@ class ClientHandler(socketserver.BaseRequestHandler):
     def parse_names(self, data):
         if(self.connection not in u.keys()):
             return self.response_error("Not logged in")
-            
+        s = ""
+        for l in u.values():
+            s += (l+" ")
+        print(s)
+        self.d['content'] = s
         self.d['sender'] = 'server'
         self.d['response'] = 'info'
         self.send()
