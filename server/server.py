@@ -37,7 +37,11 @@ class ClientHandler(socketserver.BaseRequestHandler):
         # Loop that listens for messages from the client
         while True:
             received_string = self.connection.recv(4096).decode()
-            received = json.loads(received_string)
+            try:
+                received = json.loads(received_string)
+            except:
+                self.parse_logout()
+                return 0
             self.d = {}
             received['request'] = received['request'].lower()
             print(received)
@@ -75,15 +79,17 @@ class ClientHandler(socketserver.BaseRequestHandler):
         self.send()
             
     
-    def parse_logout(self, data):
+    def parse_logout(self, data = None, user = None):
         if(self.connection not in u.keys()):
             return self.response_error("Not logged in")
             
         self.d['sender'] = 'server'
         self.d['response'] = 'info'
         self.d['content'] = 'logout successful'
-        u.pop(self.connection, None)
-        self.connection.close()
+        if user == None:
+            user = self.connection
+        u.pop(user, None)
+        user.close()
         
         
     def parse_msg(self, data):
@@ -125,9 +131,15 @@ class ClientHandler(socketserver.BaseRequestHandler):
         #convert to json and send
         self.d['timestamp'] = time.time()
         payload = json.dumps(self.d)
+        disconnected = []
         if self.d['response'] == 'message':
             for user in u.keys():
-                user.send(payload.encode())
+                try:
+                    user.send(payload.encode())
+                except:
+                    disconnected.append(user)
+            for user in disconnected:
+                self.parse_logout('', user)
         else:
             self.connection.send(payload.encode())
     
