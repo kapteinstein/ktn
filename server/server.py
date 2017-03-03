@@ -125,7 +125,11 @@ class ClientHandler(socketserver.BaseRequestHandler):
         #convert to json and send
         self.d['timestamp'] = time.time()
         payload = json.dumps(self.d)
-        self.connection.send(payload.encode())
+        if self.d['response'] == 'message':
+            for user in u.keys():
+                user.send(payload.encode())
+        else:
+            self.connection.send(payload.encode())
     
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
