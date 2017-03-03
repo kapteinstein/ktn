@@ -3,6 +3,7 @@ import socket
 from message_receiver import MessageReceiver
 from message_parser import MessageParser
 import json
+from sys import argv
 
 class Client:
     """
@@ -25,6 +26,7 @@ class Client:
     def run(self):
         # Initiate the connection to the server and receiver
         self.connection.connect((self.host, self.server_port))
+        print("-------- : Connected to host: {}".format(self.host))
         MessageReceiver(self, self.connection)
         d = {}  # new dictonary
 
@@ -66,4 +68,9 @@ if __name__ == '__main__':
 
     No alterations are necessary
     """
-    client = Client('localhost', 9998)
+    try:
+        host = argv[1]
+    except:
+        host = 'localhost'
+
+    client = Client(host, 9998)
