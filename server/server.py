@@ -8,8 +8,8 @@ Variables and functions that must be used by all the ClientHandler objects
 must be written here (e.g. a dictionary for connected clients)
 """
 
-u = {}
-log = []
+room = {'main': {'u': {}, 'log': [] }}
+usernames = []
 
 class ClientHandler(socketserver.BaseRequestHandler):
     """
@@ -29,12 +29,17 @@ class ClientHandler(socketserver.BaseRequestHandler):
             'msg': self.parse_msg,
             'names': self.parse_names,
             'help': self.parse_help,
+            'room': self.parse_room,
+            'join': self.parse_join,
+            'leave': self.parse_leave,
         }
 
         self.d = {}
         self.ip = self.client_address[0]
         self.port = self.client_address[1]
         self.connection = self.request
+        self.room = 'main'
+        self.userName = ''
 
         # Loop that listens for messages from the client
         while True:
@@ -62,23 +67,25 @@ class ClientHandler(socketserver.BaseRequestHandler):
         self.send()
 
     def parse_login(self, data):
-        if(self.connection in u.keys()):
+        if(self.connection in room[self.room]['u'].keys()):
             return self.response_error("Already logged in")
 
-        if(data['content'] in u.values()):
+        if(data['content'] in usernames):
             return self.response_error("Username taken")
 
         if(data['content'] == "" or not(re.match('[a-zA-Z0-9]*$', data['content']))):
             return self.response_error("Username invalid")
 
-        u[self.connection] = data['content']
+        room['main']['u'][self.connection] = data['content']
         self.d['sender'] = 'server'
         self.d['response'] = 'history'
-        self.d['content'] = log
+        self.d['content'] = room[self.room]['log']
+        self.userName = data['content']
+        usernames.append(self.userName)
         self.send()
 
     def parse_logout(self, data = None, user = None):
-        if(self.connection not in u.keys()):
+        if(self.connection not in room[self.room]['u'].keys()):
             return self.response_error("Not logged in")
 
         self.d['sender'] = 'server'
@@ -86,25 +93,27 @@ class ClientHandler(socketserver.BaseRequestHandler):
         self.d['content'] = 'logout successful'
         if user == None:
             user = self.connection
-        u.pop(user, None)
+        room[self.room]['u'].pop(user, None)
+        usernames.remove(self.userName)
         user.close()
 
     def parse_msg(self, data):
-        if(self.connection not in u.keys()):
-            return self.response_error("Not logged in")
-
-        self.d['sender'] = u[self.connection]
         self.d['response'] = 'message'
         self.d['content'] = data['content']
         self.d['timestamp'] = time.time()
-        log.append(json.dumps(self.d))
+        self.d['sender'] = self.userName
+
+        if(self.userName == ''):
+            return self.response_error("Not logged in")
+
+        room[self.room]['log'].append(json.dumps(self.d))
         self.send()
 
     def parse_names(self, data):
-        if(self.connection not in u.keys()):
+        if(self.connection not in room[self.room]['u'].keys()):
             return self.response_error("Not logged in")
         s = ""
-        for l in u.values():
+        for l in usernames.values():
             s += (l+" ")
         self.d['content'] = s
         self.d['sender'] = 'server'
@@ -116,6 +125,10 @@ class ClientHandler(socketserver.BaseRequestHandler):
         "logout - logout of server\n"+
         "msg<message> - Send a message to connected clients\n"+
         "names - list all usernames connected to server\n"+
+        "room create/close <name> - create or close a chat room\n" +
+        "room list - list rooms\n" +
+        "join <name> - join chat room <name>\n"+
+        "leave - leave current chat room\n"+
         "help - show this help text")
 
         self.d['response'] = 'info'
@@ -129,7 +142,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         payload = json.dumps(self.d)
         disconnected = []
         if self.d['response'] == 'message':
-            for user in u.keys():
+            for user in room[self.room]['u'].keys():
                 try:
                     user.send(payload.encode())
                 except:
@@ -138,6 +151,98 @@ class ClientHandler(socketserver.BaseRequestHandler):
                 self.parse_logout('', user)
         else:
             self.connection.send(payload.encode())
+
+    def parse_room(self, data):
+        """
+        desired functionality:
+          - create <name>: create chatroom <name>, userlist and log
+          - close <name> : close room and remove history
+        """
+        if(self.connection not in room[self.room]['u'].keys()):
+            return self.response_error("Not logged in")
+
+        # hacky solution to avoid crashes
+        c = []
+        c = data['content'].lower().split()
+        if len(c) < 2:
+            c.append('')
+
+        # parse the different requests
+        if (c[0] == 'create'):
+            if (c[1] == ''):
+                return self.response_error("Spesify name, 'room create <name>'")
+
+            if (c[1] in room.keys()):
+                return self.response_error("Room '{}' exist".format(c[1]))
+
+            room[c[1]] = {'u': {}, 'log': []}
+            self.d['content'] = "chat room '{}' created.".format(c[1])
+
+        elif (c[0] == 'close'):
+            if (c[1] not in room.keys()):
+                return self.response_error("Room does not exist")
+
+            if (room[c[1]]['u'] != {}):
+                self.d['content'] = "Can't close room. Users are still there."
+            else:
+                room.pop(c[1], None)
+                self.d['content'] = "Chat room '{}' closed".format(c[1])
+
+        elif (c[0] == 'list'):
+            s = ""
+            for r in room.keys():
+                s += r + ' '
+            self.d['content'] = s
+
+        else:
+            self.d['content'] = ("\nUsage: \n"+
+                "room create/close <name> - create or close a chat room\n"+
+                "room list - list rooms\n"+
+                "join <name> - join chat room <name>\n"+
+                "leave - leave current chat room")
+
+        self.d['response'] = 'info'
+        self.d['sender'] = 'server'
+        self.send()
+
+    def parse_join(self, data):
+        """ join <room> : join a chat room """
+        # add user to list at room['name']
+        if(self.connection not in room[self.room]['u'].keys()):
+            return self.response_error("Not logged in")
+
+        c = data['content'].lower()
+
+        if (c not in room.keys()):
+            return self.response_error("Room '{}' does not exist".format(c))
+
+        # remove user from current room and add to a new
+        room[self.room]['u'].pop(self.connection, None)
+        room[c]['u'][self.connection] = self.userName
+
+        # send the rooms log to user after join
+        self.d['response'] = 'history'
+        self.d['content'] = room[c]['log']
+        self.room = c
+        self.send()
+
+    def parse_leave(self, data):
+        """ leave current chatroom and join the default 'main' room"""
+        if(self.connection not in room[self.room]['u'].keys()):
+            return self.response_error("Not logged in")
+
+        if (self.room == 'main'):
+            return self.response_error("You are currently not in a chat room")
+
+        # remove user from current room and add to main
+        room[self.room]['u'].pop(self.connection, None)
+        room['main']['u'][self.connection] = self.userName
+
+        # send main's log
+        self.d['response'] = 'history'
+        self.d['content'] = room['main']['log']
+        self.room = 'main'
+        self.send()
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     """
