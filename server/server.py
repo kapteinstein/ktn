@@ -78,6 +78,11 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
         room['main']['u'][self.connection] = data['content']
         self.d['sender'] = 'server'
+
+        self.d['response'] = 'info'
+        self.d['content'] = 'login successful'
+        self.send()
+
         self.d['response'] = 'history'
         self.d['content'] = room[self.room]['log']
         self.userName = data['content']
