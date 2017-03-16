@@ -118,7 +118,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         if(self.connection not in room[self.room]['u'].keys()):
             return self.response_error("Not logged in")
         s = ""
-        for l in usernames.values():
+        for l in usernames:
             s += (l+" ")
         self.d['content'] = s
         self.d['sender'] = 'server'
