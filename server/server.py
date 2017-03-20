@@ -100,6 +100,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
             user = self.connection
         room[self.room]['u'].pop(user, None)
         usernames.remove(self.userName)
+        self.send()
         user.close()
 
     def parse_msg(self, data):
