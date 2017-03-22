@@ -28,7 +28,7 @@ class Client:
         self.connection.connect((self.host, self.server_port))
         print("-------- : Connected to host: {}".format(self.host))
         MessageReceiver(self, self.connection)
-        d = {}  # new dictonary
+        d = {}  # new dictonary for creating the payload
 
         while True:
             # get message from user
@@ -47,7 +47,7 @@ class Client:
                 return self.disconnect()
 
     def disconnect(self):
-        # Handle disconnect
+        # Close connection
         self.connection.close()
         print("Disconnected")
         return 0
@@ -57,20 +57,16 @@ class Client:
         self.parser.parse(message)
 
     def send_payload(self, data):
-        # Handle sending of a payload
+        # Send payload to server
         self.connection.send(data.encode())
 
 
 if __name__ == '__main__':
-    """
-    This is the main method and is executed when you type "python Client.py"
-    in your terminal.
-
-    No alterations are necessary
-    """
     try:
+        # allow connection to different hosts specified as argument on execution
         host = argv[1]
     except:
+        # default to localhost
         host = 'localhost'
 
     client = Client(host, 9998)

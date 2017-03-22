@@ -20,12 +20,10 @@ class MessageReceiver(Thread):
         self.client = client
         self.connection = connection
 
-        # TODO: Finish initialization of MessageReceiver
         # start thread
         self.start()
 
     def run(self):
-        # TODO: Make MessageReceiver receive and handle payloads
         while True:
             # recv payload and decode the binary file
             payload = self.connection.recv(4096).decode()

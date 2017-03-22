@@ -8,8 +8,8 @@ Variables and functions that must be used by all the ClientHandler objects
 must be written here (e.g. a dictionary for connected clients)
 """
 
-room = {'main': {'u': {}, 'log': [] }}
-usernames = []
+room = {'main': {'u': {}, 'log': [] }}  # list of chat rooms
+usernames = []                          # list of usernames
 
 class ClientHandler(socketserver.BaseRequestHandler):
     """
@@ -34,7 +34,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
             'leave': self.parse_leave,
         }
 
-        self.d = {}
+        self.d = {}  # dictionary for payload
         self.ip = self.client_address[0]
         self.port = self.client_address[1]
         self.connection = self.request

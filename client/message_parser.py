@@ -12,7 +12,6 @@ def calculate(string):
 
 class MessageParser():
     def __init__(self):
-
         self.possible_responses = {
             'error': self.parse_error,
             'info': self.parse_info,
@@ -23,9 +22,11 @@ class MessageParser():
     def parse(self, payload):
         payload = json.loads(payload) # decode the JSON object
 
+        # print timestamp
         time = datetime.datetime.fromtimestamp(payload['timestamp'])
         print("{}".format(time.strftime('%H:%M:%S')), end='')
 
+        # parse the request
         if payload['response'] in self.possible_responses:
             return self.possible_responses[payload['response']](payload)
         else:
